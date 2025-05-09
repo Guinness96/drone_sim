@@ -21,6 +21,8 @@ This project implements:
 
 ## Project Structure
 
+This project follows a monorepo structure with both the frontend and backend in a single repository:
+
 ```
 drone_sim/
 ├── backend/               # Flask API server
@@ -42,64 +44,69 @@ drone_sim/
 └── requirements.txt       # Python dependencies
 ```
 
-## Setup & Installation
+## Getting Started
 
 ### Prerequisites
 
-- Python 3.x
-- Node.js and npm
-- Git
+- Python 3.8+
+- Node.js 16+
+- PostgreSQL
 
 ### Backend Setup
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/autonomous-drone-simulation-dashboard.git
-   cd autonomous-drone-simulation-dashboard
-   ```
-
-2. Create and activate a virtual environment:
+1. Create a virtual environment:
    ```
    python -m venv .venv
-   .\.venv\Scripts\Activate.ps1  # Windows PowerShell
-   # OR
-   source .venv/bin/activate     # Linux/macOS
+   .venv\Scripts\activate  # Windows
    ```
 
-3. Install Python dependencies:
+2. Install dependencies:
    ```
    pip install -r requirements.txt
    ```
 
-4. Run the Flask server:
+3. Set up PostgreSQL database:
    ```
-   cd backend
-   python app.py
+   psql -U postgres -f setup_postgres.sql
    ```
-   The API will be available at http://localhost:5000
+
+4. Run the backend server:
+   ```
+   python -m backend.app
+   ```
 
 ### Frontend Setup
 
-1. Install frontend dependencies:
+1. Navigate to the frontend directory:
    ```
    cd frontend
+   ```
+
+2. Install dependencies:
+   ```
    npm install
    ```
 
-2. Start the React development server:
+3. Run the development server:
    ```
    npm start
    ```
-   The frontend will be available at http://localhost:3000
 
-### Running the Simulation
+## Development Workflow
 
-1. Make sure the Flask backend is running
-2. Run the drone simulator:
-   ```
-   cd simulation
-   python drone_simulator.py
-   ```
+This repository uses a monorepo approach where both frontend and backend code are stored in the same repository. This simplifies version management and coordination between components.
+
+### Branch Strategy
+
+- `master`: Main branch containing production-ready code
+- Create feature branches for new features
+- Use pull requests to merge changes into master
+
+## Testing
+
+- Backend tests: `pytest`
+- Frontend tests: `cd frontend && npm test`
+- Integration tests: `pytest tests/`
 
 ## API Endpoints
 
@@ -109,20 +116,6 @@ drone_sim/
 - `GET /api/flights` - Get all flights
 - `GET /api/flights/<flight_id>/data` - Get data for a specific flight
 - `GET /api/sensor_readings/latest?limit=10` - Get the latest sensor readings
-
-## Testing
-
-Run backend tests:
-```
-cd backend
-python -m pytest tests/
-```
-
-Run simulation tests:
-```
-cd simulation
-python -m pytest tests/
-```
 
 ## Current Development Status
 
