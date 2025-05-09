@@ -44,4 +44,7 @@ yarn-error.log*
 
 # Logs
 logs/
-*.log 
+*.log
+
+# Ensure frontend directory itself is not ignored
+!frontend/ 
