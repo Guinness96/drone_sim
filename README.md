@@ -62,12 +62,42 @@ drone_sim/
 - Node.js 16+
 - PostgreSQL
 
+### Environment Setup
+
+1. Create a `.env` file in the project root:
+   ```
+   DATABASE_URL=postgresql://drone_user:drone_password@localhost:5432/drone_monitoring_db
+   SECRET_KEY=your-secret-key-for-development
+   FLASK_ENV=development
+   ```
+
+### Database Setup
+
+1. Start PostgreSQL service if it's not already running:
+   ```
+   # Windows
+   net start postgresql-x64-14
+   # Linux/MacOS
+   sudo service postgresql start
+   ```
+
+2. Set up the database tables:
+   ```
+   psql -U postgres -f setup_postgres.sql
+   ```
+
 ### Backend Setup
 
-1. Create a virtual environment:
+1. Create and activate a virtual environment:
    ```
+   # Create virtual environment
    python -m venv .venv
-   .venv\Scripts\activate  # Windows
+   
+   # Activate on Windows
+   .venv\Scripts\activate
+   
+   # Activate on Linux/MacOS
+   source .venv/bin/activate
    ```
 
 2. Install dependencies:
@@ -75,40 +105,50 @@ drone_sim/
    pip install -r requirements.txt
    ```
 
-3. Set up PostgreSQL database:
+3. Start the Flask backend server:
    ```
-   psql -U postgres -f setup_postgres.sql
-   ```
-
-4. Run the backend server:
-   ```
+   # Make sure you are in the project root directory
    python -m backend.app
    ```
+   The server should be available at http://localhost:5000
 
 ### Frontend Setup
 
-1. Navigate to the frontend directory:
+1. Open a new terminal window
+
+2. Navigate to the frontend directory:
    ```
    cd frontend
    ```
 
-2. Install dependencies:
+3. Install dependencies:
    ```
    npm install
    ```
 
-3. Run the development server:
+4. Start the development server:
    ```
    npm start
    ```
+   The frontend should be available at http://localhost:3000
 
-### Simulation Setup
+### Running the Simulation
 
-The simulation module can be run independently to generate and send data to the API:
+1. Make sure the backend server is running
 
-```
-python -m simulation.drone_simulator
-```
+2. Run the simulation from the project root directory (in a separate terminal with the virtual environment activated):
+   ```
+   # Use the correct module path to fix import issues
+   python -m simulation.drone_simulator
+   ```
+
+3. Alternatively, you can control the simulation from the web UI at http://localhost:3000 using the SimulatorControl component
+
+### Troubleshooting
+
+- **Database Connection Issues**: Ensure PostgreSQL is running and that your database connection details in the `.env` file match your PostgreSQL setup
+- **Import Errors**: Make sure you're running commands from the project root directory and using module notation (e.g., `python -m backend.app` instead of just `python backend/app.py`)
+- **Port Conflicts**: If port 5000 or 3000 is already in use, you'll need to change the port in the respective configuration
 
 ## Development Workflow
 

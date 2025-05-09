@@ -5,7 +5,8 @@ import requests
 import os
 import sys
 from datetime import datetime
-from drone_physics import DronePhysics
+from simulation.drone_physics import DronePhysics
+import argparse
 
 class DroneSimulator:
     def __init__(self, api_url="http://localhost:5000", config=None):
@@ -266,12 +267,18 @@ def load_config_from_file(file_path):
         return None
 
 if __name__ == "__main__":
-    # Check if config file path was provided as argument
+    # Set up command line argument parsing
+    parser = argparse.ArgumentParser(description='Drone Simulator with Physics Engine')
+    parser.add_argument('--config', type=str, help='Path to a JSON configuration file')
+    parser.add_argument('--speed', type=float, help='Simulation speed multiplier (e.g., 2.0 for 2x speed)')
+    parser.add_argument('--api-url', type=str, default='http://localhost:5000', help='URL of the backend API')
+    args = parser.parse_args()
+    
+    # Load configuration
     config = None
-    if len(sys.argv) > 1:
-        config_path = sys.argv[1]
-        config = load_config_from_file(config_path)
-        print(f"Using configuration from: {config_path}")
+    if args.config:
+        config = load_config_from_file(args.config)
+        print(f"Using configuration from: {args.config}")
     else:
         # Example configuration
         config = {
@@ -292,8 +299,13 @@ if __name__ == "__main__":
         }
         print("Using default configuration")
     
+    # Override simulation speed if provided via command line
+    if args.speed and config:
+        config["simulation_speed"] = args.speed
+        print(f"Overriding simulation speed to: {args.speed}x")
+    
     # Create and run simulation with config
-    simulator = DroneSimulator(config=config)
+    simulator = DroneSimulator(api_url=args.api_url, config=config)
     flight_data = simulator.simulate_path()
     
     # Output the collected data as JSON
