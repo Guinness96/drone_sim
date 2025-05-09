@@ -3,16 +3,17 @@ import sys
 from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from backend.models import db, Flight, DronePosition, SensorReading
-from backend.config import Config
 
-# Add the parent directory to sys.path if needed
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-
-
+# Adjust import paths based on how the file is being run
+if __name__ == "__main__":
+    # When running as a script directly (python app.py)
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from models import db, Flight, DronePosition, SensorReading
+    from config import Config
+else:
+    # When imported as a module (e.g., in tests)
+    from backend.models import db, Flight, DronePosition, SensorReading
+    from backend.config import Config
 
 app = Flask(__name__)
 app.config.from_object(Config)
