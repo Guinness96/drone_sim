@@ -112,7 +112,7 @@
 - [x] In `frontend/src/`, create `services/` directory (for API calls).
 
 ### API Integration (Frontend)
-- [ ] Install Axios in `frontend/`: `npm install axios`
+- [x] Install Axios in `frontend/`: `npm install axios`
 - [x] In `frontend/src/services/api.js`, create functions:
     - [x] `startNewFlight()`
     - [x] `logFlightData(flightId, data)`
