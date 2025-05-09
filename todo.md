@@ -28,12 +28,12 @@
 - [x] Create `frontend/src/services/` directory
 
 ### Database (PostgreSQL) - Initial Setup
-- [ ] Install PostgreSQL locally or sign up for a free tier cloud instance (e.g., ElephantSQL).
-- [ ] Create database: `drone_monitoring_db`
-- [ ] Create database user: `drone_user` with a secure password.
-- [ ] Grant `drone_user` all privileges on `drone_monitoring_db`.
-- [ ] Note down DB connection string: `postgresql://drone_user:PASSWORD@HOST:PORT/drone_monitoring_db`
-- [x] Set up SQLite for development (alternative to PostgreSQL)
+- [x] Install PostgreSQL locally or sign up for a free tier cloud instance (e.g., ElephantSQL).
+- [x] Create database: `drone_monitoring_db`
+- [x] Create database user: `drone_user` with a secure password.
+- [x] Grant `drone_user` all privileges on `drone_monitoring_db`.
+- [x] Note down DB connection string: `postgresql://drone_user:drone_password@localhost:5432/drone_monitoring_db`
+- [x] Set up test database: `drone_monitoring_db_test`
 
 ## Phase 1: Core Simulation Logic (Python)
 

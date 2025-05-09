@@ -1,41 +1,37 @@
 import os
 import sys
 import pytest
-import tempfile
-from flask import Flask
 
 # Add parent directory to path so we can import from backend
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from backend.models import db, Flight, DronePosition, SensorReading
+from backend.app import app as flask_app
 
 @pytest.fixture(scope='module')
 def app():
     """Create a Flask app configured for testing"""
-    # Create a temporary file to isolate the database for each test
-    db_fd, db_path = tempfile.mkstemp()
+    # Set up a test-specific PostgreSQL database
+    test_db_name = 'drone_monitoring_db_test'
     
-    app = Flask(__name__)
+    # Use the actual app but reconfigure it for testing with a test database
+    app = flask_app
     app.config.update({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': f'sqlite:///{db_path}',
+        'SQLALCHEMY_DATABASE_URI': f'postgresql://drone_user:drone_password@localhost:5432/{test_db_name}',
         'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     })
     
-    # Create the database and the tables
+    # Create the test database if it doesn't exist
     with app.app_context():
-        db.init_app(app)
+        # Database already created manually
+        # Create the database tables in the test database
         db.create_all()
     
     yield app
     
-    # Close and remove the temporary database
-    try:
-        os.close(db_fd)
-        os.unlink(db_path)
-    except (OSError, PermissionError) as e:
-        # On Windows, file may be locked by SQLite
-        print(f"Warning: Could not remove temporary test database: {e}")
+    # We don't drop the test database here to allow for inspection,
+    # but in a real CI environment, you might want to drop it
 
 @pytest.fixture(scope='module')
 def client(app):

@@ -13,7 +13,7 @@ This project implements:
 
 - **Simulation**: Python
 - **Backend API**: Python (Flask)
-- **Database**: SQLite (development), PostgreSQL (planned for production)
+- **Database**: PostgreSQL
 - **Frontend**: React.js
 - **Charting**: Chart.js (planned)
 - **Mapping**: Leaflet.js (planned)
