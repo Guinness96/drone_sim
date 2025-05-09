@@ -5,7 +5,7 @@
 ### Project Management & Version Control
 - [x] Create GitHub repository: `autonomous-drone-simulation-dashboard` (local project created)
 - [x] Initialize `README.md` with project title, brief description, and tech stack.
-- [ ] Set up GitHub Projects board with columns: To Do, In Progress, Done.
+- [x] Set up GitHub Projects board with columns: To Do, In Progress, Done.
 - [x] Create `.gitignore` file for Python and React development
 
 ### Development Environments
