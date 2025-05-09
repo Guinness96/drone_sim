@@ -1,6 +1,6 @@
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, UTC
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -31,7 +31,7 @@ def hello_world():
 # API Endpoint: Start a new flight
 @app.route('/api/flights/start', methods=['POST'])
 def start_flight():
-    new_flight = Flight(start_time=datetime.utcnow())
+    new_flight = Flight(start_time=datetime.now(UTC))
     db.session.add(new_flight)
     db.session.commit()
     return jsonify({'flight_id': new_flight.id, 'start_time': new_flight.start_time}), 201
@@ -42,14 +42,14 @@ def log_flight_data(flight_id):
     data = request.json
     
     # Find the flight
-    flight = Flight.query.get(flight_id)
+    flight = db.session.get(Flight, flight_id)
     if not flight:
         return jsonify({'error': 'Flight not found'}), 404
     
     # Create drone position
     position = DronePosition(
         flight_id=flight_id,
-        timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.utcnow(),
+        timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.now(UTC),
         latitude=data['latitude'],
         longitude=data['longitude'],
         altitude=data['altitude']
@@ -66,7 +66,7 @@ def log_flight_data(flight_id):
         
     reading = SensorReading(
         drone_position_id=position.id,
-        timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.utcnow(),
+        timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.now(UTC),
         temperature=data['temperature'],
         humidity=data['humidity'],
         air_quality_index=data['air_quality_index'],
@@ -85,11 +85,11 @@ def log_flight_data(flight_id):
 # API Endpoint: End a flight
 @app.route('/api/flights/<int:flight_id>/end', methods=['POST'])
 def end_flight(flight_id):
-    flight = Flight.query.get(flight_id)
+    flight = db.session.get(Flight, flight_id)
     if not flight:
         return jsonify({'error': 'Flight not found'}), 404
     
-    flight.end_time = datetime.utcnow()
+    flight.end_time = datetime.now(UTC)
     db.session.commit()
     
     return jsonify({'flight_id': flight.id, 'end_time': flight.end_time}), 200
@@ -111,7 +111,7 @@ def get_all_flights():
 # API Endpoint: Get flight data
 @app.route('/api/flights/<int:flight_id>/data', methods=['GET'])
 def get_flight_data(flight_id):
-    flight = Flight.query.get(flight_id)
+    flight = db.session.get(Flight, flight_id)
     if not flight:
         return jsonify({'error': 'Flight not found'}), 404
     

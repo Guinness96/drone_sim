@@ -1,6 +1,7 @@
 import os
 import sys
 import pytest
+from datetime import datetime, UTC
 
 # Add parent directory to path so we can import from backend
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -55,7 +56,7 @@ def session(app):
 @pytest.fixture(scope='function')
 def sample_flight(session):
     """Create a sample flight for testing"""
-    flight = Flight()
+    flight = Flight(start_time=datetime.now(UTC))
     session.add(flight)
     session.commit()
     return flight
@@ -67,7 +68,8 @@ def sample_position(session, sample_flight):
         flight_id=sample_flight.id,
         latitude=51.507351,
         longitude=-0.127758,
-        altitude=100.0
+        altitude=100.0,
+        timestamp=datetime.now(UTC)
     )
     session.add(position)
     session.commit()
@@ -80,7 +82,8 @@ def sample_reading(session, sample_position):
         drone_position_id=sample_position.id,
         temperature=20.0,
         humidity=60.0,
-        air_quality_index=50.0
+        air_quality_index=50.0,
+        timestamp=datetime.now(UTC)
     )
     session.add(reading)
     session.commit()

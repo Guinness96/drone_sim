@@ -1,7 +1,8 @@
 """Tests for the API endpoints"""
 import json
-from datetime import datetime
+from datetime import datetime, UTC
 from backend.models import Flight, DronePosition, SensorReading
+from backend.app import db
 
 def test_hello_world(client):
     """Test the root endpoint"""
@@ -24,7 +25,7 @@ def test_start_flight(client, session):
     assert 'start_time' in data
     
     # Verify the flight was created in the database
-    flight = Flight.query.get(data['flight_id'])
+    flight = db.session.get(Flight, data['flight_id'])
     assert flight is not None
     assert flight.start_time is not None
     assert flight.end_time is None
@@ -41,14 +42,14 @@ def test_end_flight(client, sample_flight):
     assert 'end_time' in data
     
     # Verify the flight was updated in the database
-    flight = Flight.query.get(sample_flight.id)
+    flight = db.session.get(Flight, sample_flight.id)
     assert flight.end_time is not None
 
 def test_log_flight_data(client, sample_flight):
     """Test logging flight data"""
     # Create test data
     test_data = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "latitude": 51.507351,
         "longitude": -0.127758,
         "altitude": 100.0,
@@ -72,14 +73,14 @@ def test_log_flight_data(client, sample_flight):
     assert 'is_anomaly' in data
     
     # Verify the data was saved in the database
-    position = DronePosition.query.get(data['position_id'])
+    position = db.session.get(DronePosition, data['position_id'])
     assert position is not None
     assert position.flight_id == sample_flight.id
     assert position.latitude == test_data['latitude']
     assert position.longitude == test_data['longitude']
     assert position.altitude == test_data['altitude']
     
-    reading = SensorReading.query.get(data['reading_id'])
+    reading = db.session.get(SensorReading, data['reading_id'])
     assert reading is not None
     assert reading.drone_position_id == position.id
     assert reading.temperature == test_data['temperature']
@@ -91,7 +92,7 @@ def test_log_flight_data_anomaly(client, sample_flight):
     """Test logging flight data with anomalous values"""
     # Create test data with anomalous values
     test_data = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "latitude": 51.507351,
         "longitude": -0.127758,
         "altitude": 100.0,
@@ -113,7 +114,7 @@ def test_log_flight_data_anomaly(client, sample_flight):
     assert data['is_anomaly'] is True
     
     # Verify the anomaly was saved in the database
-    reading = SensorReading.query.get(data['reading_id'])
+    reading = db.session.get(SensorReading, data['reading_id'])
     assert reading.is_anomaly is True
 
 def test_get_all_flights(client, sample_flight):
