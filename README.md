@@ -6,9 +6,10 @@ A software-based proof-of-concept (PoC) system that simulates an autonomous dron
 
 This project implements:
 - A Python-based drone simulator that generates environmental sensor data along a predefined flight path
+- A realistic physics engine simulating drone movement with inertia, acceleration, and turning dynamics
 - A Flask backend API for storing and retrieving drone flight and sensor data
 - A PostgreSQL database for persistent storage of flight and sensor data
-- A React frontend for visualizing the collected data
+- A React frontend for visualizing the collected data and controlling simulation parameters
 
 ## Tech Stack
 
@@ -40,6 +41,7 @@ drone_sim/
 │       └── services/      # API services 
 ├── simulation/            # Python-based drone simulation
 │   ├── drone_simulator.py # Drone flight and sensor data simulator
+│   ├── drone_physics.py   # Physics engine for realistic drone movement
 │   └── tests/             # Simulation tests
 ├── tests/                 # Integration tests
 ├── instance/              # Instance-specific configuration
@@ -123,6 +125,8 @@ This repository uses a monorepo approach where both frontend and backend code ar
 
 - Backend tests: `pytest backend/tests/`
 - Simulation tests: `pytest simulation/tests/`
+- Physics tests: `pytest simulation/test_drone_physics.py`
+- Physics integration tests: `pytest simulation/test_physics_integration.py`
 - Frontend tests: `cd frontend && npm test`
 - Integration tests: `pytest tests/`
 
@@ -142,10 +146,12 @@ Based on the project to-do list and requirements:
 ### Completed:
 - ✅ Project setup and structure
 - ✅ Python drone simulator with waypoint and sensor data generation
+- ✅ Realistic physics engine for drone movement simulation
 - ✅ Flask backend API with PostgreSQL database integration
 - ✅ API endpoints for data ingestion and retrieval
-- ✅ Backend and simulation testing
+- ✅ Backend, simulation, and physics testing
 - ✅ Frontend API service integration
+- ✅ Frontend simulator control component for adjusting simulation parameters
 
 ### In Progress:
 - 🔄 Frontend dashboard components (FlightList, SensorDataTable)
@@ -155,6 +161,7 @@ Based on the project to-do list and requirements:
 - 📝 Map visualization with Leaflet.js
 - 📝 Authentication with Auth0
 - 📝 Basic anomaly detection
+- 📝 Enhanced simulation features (battery life, weather conditions, etc.)
 - 📝 Comprehensive testing and documentation
 
 ## License
