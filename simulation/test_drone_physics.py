@@ -1,6 +1,5 @@
 import unittest
 import time
-import math
 from simulation.drone_physics import DronePhysics
 
 class TestDronePhysics(unittest.TestCase):
@@ -58,8 +57,8 @@ class TestDronePhysics(unittest.TestCase):
         # Force a longer time delta for testing
         self.physics.last_update_time = time.time() - 1.0
         
-        # Update physics
-        new_position = self.physics.update_physics(target)
+        # Update physics (use the return value to avoid unused variable warning)
+        self.physics.update_physics(target)
         
         # Verify drone has started moving toward target
         self.assertNotEqual(self.physics.position, (51.507351, -0.127758))
