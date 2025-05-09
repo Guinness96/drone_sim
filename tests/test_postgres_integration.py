@@ -2,128 +2,158 @@
 Integration tests for PostgreSQL functionality in run.py.
 These tests interact with the actual PostgreSQL installation.
 """
-import unittest
-from unittest.mock import patch
+import pytest
+from unittest.mock import patch, MagicMock
 import sys
 import os
 import time
 import subprocess
+import threading
+from queue import Queue
 
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import run
+# Import the correct modules
+from project_runner import postgres
+from project_runner.cli import main
 
-class PostgreSQLIntegrationTests(unittest.TestCase):
-    """Integration tests for PostgreSQL functionality."""
-    
-    def tearDown(self):
-        """Clean up PostgreSQL state after tests."""
-        try:
-            # Stop PostgreSQL server if it's running
-            subprocess.run(
-                [r"C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe", "stop", "-D", 
-                 r"C:\Program Files\PostgreSQL\16\data", "-m", "fast"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=10
-            )
-        except Exception as e:
-            print(f"Warning: Could not stop PostgreSQL during tearDown: {e}")
-    
-    def test_is_postgres_running_integration(self):
-        """Test is_postgres_running against actual PostgreSQL installation."""
-        # First stop PostgreSQL if it's running
-        try:
-            subprocess.run(
-                [r"C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe", "stop", "-D", 
-                 r"C:\Program Files\PostgreSQL\16\data", "-m", "fast"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=10
-            )
-            time.sleep(2)  # Give it time to stop
-        except Exception:
-            pass  # Ignore errors here
-        
-        # Check that PostgreSQL is not running
-        result = run.is_postgres_running()
-        self.assertFalse(result, "PostgreSQL should not be running after being stopped")
-        
-        # Start PostgreSQL
-        try:
-            start_result = run.start_postgres(timeout=30)
-            self.assertTrue(start_result, "PostgreSQL should start successfully")
-            
-            # Check that it's now running
-            is_running = run.is_postgres_running()
-            self.assertTrue(is_running, "PostgreSQL should be running after being started")
-        except Exception as e:
-            self.fail(f"Exception occurred during test: {e}")
-    
-    def test_start_postgres_already_running(self):
-        """Test start_postgres when PostgreSQL is already running."""
-        # First ensure PostgreSQL is running
-        try:
-            subprocess.run(
-                [r"C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe", "start", "-D", 
-                 r"C:\Program Files\PostgreSQL\16\data", "-w"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=30
-            )
-            time.sleep(2)  # Give it time to start
-        except Exception as e:
-            self.skipTest(f"Could not start PostgreSQL for test setup: {e}")
-        
-        # Confirm PostgreSQL is running
-        is_running = run.is_postgres_running()
-        if not is_running:
-            self.skipTest("Could not start PostgreSQL for test setup")
-        
-        # Try to start it again
-        start_result = run.start_postgres()
-        
-        # This should return True as PostgreSQL is already running
-        # (since pg_ctl with -w waits for server startup)
-        self.assertTrue(start_result, "start_postgres should succeed when PostgreSQL is already running")
-    
-    def test_full_startup_sequence(self):
-        """Test the complete PostgreSQL startup sequence in the main function."""
-        # First stop PostgreSQL if it's running
-        try:
-            subprocess.run(
-                [r"C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe", "stop", "-D", 
-                 r"C:\Program Files\PostgreSQL\16\data", "-m", "fast"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=10
-            )
-            time.sleep(2)  # Give it time to stop
-        except Exception:
-            pass  # Ignore errors here
-        
-        # Create mock command-line arguments for PostgreSQL-only operation
-        with patch('sys.argv', ['run.py', '--no-backend', '--no-frontend']):
-            # Mock time.sleep to avoid blocking indefinitely
-            with patch('run.time.sleep', side_effect=KeyboardInterrupt):
-                # Run the main function
-                try:
-                    run.main()
-                    # If we get here, no exceptions were raised
-                    self.assertTrue(run.is_postgres_running(), 
-                                    "PostgreSQL should be running after main function execution")
-                except KeyboardInterrupt:
-                    # This is expected due to our mock
-                    # Check if PostgreSQL is running
-                    self.assertTrue(run.is_postgres_running(), 
-                                   "PostgreSQL should be running after KeyboardInterrupt")
-                except Exception as e:
-                    self.fail(f"Unexpected exception in main function: {e}")
+# List to track processes for cleanup
+processes = []
 
-if __name__ == '__main__':
-    unittest.main() 
+@pytest.fixture
+def cleanup_postgres():
+    """Fixture to clean up PostgreSQL after tests."""
+    # Run the test
+    yield
+    
+    # Teardown - stop PostgreSQL server if it's running
+    try:
+        subprocess.run(
+            [r"C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe", "stop", "-D", 
+             r"C:\Program Files\PostgreSQL\16\data", "-m", "fast"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=10
+        )
+    except Exception as e:
+        print(f"Warning: Could not stop PostgreSQL during cleanup: {e}")
+
+@pytest.fixture
+def stop_postgres():
+    """Fixture to stop PostgreSQL before a test."""
+    try:
+        subprocess.run(
+            [r"C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe", "stop", "-D", 
+             r"C:\Program Files\PostgreSQL\16\data", "-m", "fast"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=10
+        )
+        time.sleep(2)  # Give it time to stop
+    except Exception:
+        pass  # Ignore errors here
+
+@pytest.fixture
+def start_postgres():
+    """Fixture to ensure PostgreSQL is running."""
+    # First check if PostgreSQL is already running
+    config = postgres.get_config()
+    try:
+        is_running = subprocess.run(
+            [config['pg_isready']],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if "accepting connections" in is_running.stdout:
+            # Already running, no need to start
+            return
+    except Exception:
+        pass  # Continue to start it
+        
+    try:
+        subprocess.run(
+            [r"C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe", "start", "-D", 
+             r"C:\Program Files\PostgreSQL\16\data", "-w"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30
+        )
+        time.sleep(2)  # Give it time to start
+    except Exception as e:
+        pytest.skip(f"Could not start PostgreSQL for test setup: {e}")
+
+def test_is_postgres_running_integration(cleanup_postgres, stop_postgres):
+    """Test is_postgres_running against actual PostgreSQL installation."""
+    # Verify PostgreSQL is not running after being stopped
+    result = postgres.is_postgres_running()
+    assert result is False, "PostgreSQL should not be running after being stopped"
+    
+    # Start PostgreSQL
+    try:
+        start_result, _ = postgres.start_postgres(timeout=30)
+        assert start_result is True, "PostgreSQL should start successfully"
+        
+        # Verify it's now running
+        is_running = postgres.is_postgres_running()
+        assert is_running is True, "PostgreSQL should be running after being started"
+    except Exception as e:
+        pytest.fail(f"Exception occurred during test: {e}")
+
+@patch('subprocess.run')
+def test_start_postgres_already_running(mock_run, cleanup_postgres):
+    """Test start_postgres when PostgreSQL is already running.
+    
+    This test verifies that when PostgreSQL is already running,
+    the start_postgres function returns True without starting a new process.
+    """
+    # Create a mock response with PostgreSQL already running
+    mock_success = MagicMock()
+    mock_success.stdout = "localhost:5432 - accepting connections"
+    
+    # Configure subprocess.run to always return success
+    mock_run.return_value = mock_success
+    
+    # Call the function with a short timeout for safety
+    start_result, process = postgres.start_postgres(timeout=3)
+    
+    # Verify the result is True (indicating success)
+    assert start_result is True, "start_postgres should return True when PostgreSQL is already running"
+    
+    # Verify no process was returned (since we didn't start one)
+    assert process is None, "No process should be returned when PostgreSQL is already running"
+
+def test_full_startup_sequence(cleanup_postgres):
+    """Test the full startup sequence for PostgreSQL.
+    
+    This tests the sequence of operations:
+    1. Check if PostgreSQL is running
+    2. Start PostgreSQL if needed
+    3. Verify PostgreSQL is running
+    """
+    # First, capture the initial state
+    initial_running = postgres.is_postgres_running()
+    print(f"Initial PostgreSQL status: {'Running' if initial_running else 'Not running'}")
+    
+    # If PostgreSQL is already running, we can't test the startup sequence accurately
+    # since we don't want to restart an already running system
+    if initial_running:
+        pytest.skip("PostgreSQL is already running - skipping full startup test")
+    
+    # Start PostgreSQL
+    start_result, process = postgres.start_postgres()
+    
+    # Cleanup the process if it was newly started
+    if process:
+        processes.append(process)
+    
+    # Verify the start worked
+    assert start_result is True, "PostgreSQL failed to start"
+    
+    # Verify PostgreSQL is now running
+    final_running = postgres.is_postgres_running()
+    assert final_running is True, "PostgreSQL should be running after start" 

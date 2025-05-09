@@ -1,58 +1,96 @@
-# Test Summary for Drone Simulation Project
+# Test Summary for Project Runner Module Refactoring
 
-## Run Script Tests
+## Overview
 
-### Unit Tests (`tests/test_run.py`)
+The project runner module (`project_runner`) was refactored from a monolithic script (`run.py`) into a modular Python package with separate components for handling different aspects of project startup. This summary documents the testing approach and results.
 
-The run script tests verify the functionality of the project runner (`run.py`) that coordinates PostgreSQL, backend, and frontend components.
+## Module Structure
 
-#### Command Line Arguments Tests
-- `test_main_default_behavior`: Tests that the default behavior starts PostgreSQL, backend, and frontend
-- `test_main_with_simulation`: Tests that the `--simulation` flag starts the simulation
-- `test_main_no_frontend`: Tests that the `--no-frontend` flag prevents frontend startup
+The project runner module was split into the following components:
 
-#### Backend Tests
-- `test_start_backend`: Tests successful backend startup
-- `test_start_backend_failure`: Tests handling of backend startup failure
+- `project_runner/postgres.py`: PostgreSQL database management
+- `project_runner/servers.py`: Backend and frontend server management
+- `project_runner/process.py`: Process monitoring and cleanup
+- `project_runner/cli.py`: Command-line interface and main entry point
 
-#### PostgreSQL Tests
-- `test_is_postgres_running_success`: Tests detection of PostgreSQL when it's running
-- `test_is_postgres_running_not_running`: Tests detection of PostgreSQL when it's not running
-- `test_is_postgres_running_exception`: Tests handling of exceptions during PostgreSQL detection
-- `test_start_postgres_success`: Tests successful PostgreSQL startup
-- `test_start_postgres_failure`: Tests handling of PostgreSQL startup failure
-- `test_start_postgres_exception`: Tests handling of exceptions during PostgreSQL startup
+## Testing Approach
 
-#### Frontend Tests
-- `test_start_frontend_success`: Tests successful frontend startup
-- `test_start_frontend_npm_not_found`: Tests handling of missing npm
-- `test_start_frontend_no_frontend_dir`: Tests handling of missing frontend directory
+A comprehensive testing strategy was implemented to ensure the refactored code functions correctly:
 
-#### Process Management Tests
-- `test_clean_up`: Tests proper cleanup of child processes
+1. Unit tests for each component, verifying:
+   - Process monitoring and termination
+   - PostgreSQL database startup and status checking
+   - Server management and error handling
+   - CLI argument parsing and command execution
 
-### Integration Tests (`tests/test_postgres_integration.py`)
+2. Integration tests ensuring:
+   - Proper interaction between components
+   - Correct startup and shutdown sequences
+   - Error recovery and graceful degradation
 
-The PostgreSQL integration tests verify actual interaction with PostgreSQL.
+## Test Framework Standardisation
 
-- `test_is_postgres_running_integration`: Tests detecting real PostgreSQL instances
-- `test_start_postgres_already_running`: Tests starting PostgreSQL when it's already running
-- `test_full_startup_sequence`: Tests the full startup sequence of the main function
+As part of improving test maintainability, all tests have been standardised to use pytest instead of unittest:
 
-## Coverage Summary
+1. Converted test files:
+   - `tests/project_runner/test_process.py`
+   - `tests/project_runner/test_postgres.py`
+   - `tests/project_runner/test_servers.py`
+   - `tests/project_runner/test_cli.py`
+   - `tests/test_postgres_integration.py`
+   - `tests/test_run.py`
 
-Current test coverage includes:
-- Command-line argument handling
-- Process management (starting and stopping components)
-- Error handling for all major components
-- PostgreSQL detection and startup
-- Frontend dependency and startup checks
-- Backend server startup and verification
+2. Files already using pytest style:
+   - `simulation/tests/test_simulator.py`
+   - `backend/tests/test_models.py`
+   - `backend/tests/test_api.py`
 
-## Future Test Improvements
+### Benefits of pytest standardisation:
 
-Areas for potential test improvement:
-- Add more integration tests covering actual backend and frontend functionality
-- Add tests for simulation integration
-- Add tests for handling of the custom simulation configuration
-- Implement test coverage reporting 
+- **Improved readability**: Function-based tests are more concise and readable than class-based tests
+- **Better fixture management**: pytest fixtures provide more flexible test setup and teardown
+- **Built-in assertions**: Simple assert statements with automatic introspection upon failure
+- **Parameterised testing**: Easier to test multiple variations of the same functionality
+- **Less boilerplate code**: Reduced code duplication and simpler test structure
+- **Better error reporting**: More informative error messages when tests fail
+
+## Test Coverage
+
+The tests cover the following key functionality:
+
+- **postgres.py**:
+  - ✅ Starting PostgreSQL server
+  - ✅ Checking PostgreSQL server status
+  - ✅ Handling PostgreSQL server errors
+  - ✅ Integration with system PostgreSQL installation
+
+- **servers.py**:
+  - ✅ Starting backend server
+  - ✅ Starting frontend development server
+  - ✅ Handling port conflicts
+  - ✅ Detecting server startup failures
+  - ✅ Proper server process management
+
+- **process.py**:
+  - ✅ Process creation and monitoring
+  - ✅ Clean termination of processes
+  - ✅ Forced termination when necessary
+  - ✅ Signal handling
+
+- **cli.py**:
+  - ✅ Command-line argument parsing
+  - ✅ Executing appropriate commands based on arguments
+  - ✅ Proper error handling and reporting
+  - ✅ Signal handling for clean shutdown
+
+## Recommendations for Future Test Improvements
+
+1. **Add test coverage reporting**: Implement pytest-cov to quantify test coverage
+2. **Expand edge case tests**: Add tests for uncommon but possible error conditions
+3. **Parameterise more tests**: Identify tests that could benefit from parametrisation
+4. **Add markers for test categorisation**: Use pytest markers to organise tests
+5. **Create test documentation**: Document test fixtures and patterns for future reference
+
+## Conclusion
+
+The refactoring of the project runner module has been thoroughly tested, with all tests now using the pytest framework for improved consistency and maintainability. The codebase now has a strong foundation of tests that can be extended as new features are added. 

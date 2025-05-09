@@ -6,201 +6,234 @@ from flask_cors import CORS
 import subprocess
 import json
 
-# Always use absolute imports based on the package structure
-# This ensures imports work correctly regardless of how the app is run
-from backend.models import db, Flight, DronePosition, SensorReading
-from backend.config import Config
+# Add the project root to Python path for direct script execution
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-app = Flask(__name__)
-app.config.from_object(Config)
-CORS(app)
-db.init_app(app)
+# Use relative imports when running as a package, fallback to absolute when running directly
+try:
+    from .models import db, Flight, DronePosition, SensorReading
+    from .config import Config
+except ImportError:
+    from backend.models import db, Flight, DronePosition, SensorReading
+    from backend.config import Config
 
-# Initialise database tables
-with app.app_context():
-    db.create_all()
-
-@app.route('/')
-def hello_world():
-    return {'message': 'Drone Monitoring API is running.'}
-
-# API Endpoint: Start a new flight
-@app.route('/api/flights/start', methods=['POST'])
-def start_flight():
-    new_flight = Flight(start_time=datetime.now(UTC))
-    db.session.add(new_flight)
-    db.session.commit()
-    return jsonify({'flight_id': new_flight.id, 'start_time': new_flight.start_time}), 201
-
-# API Endpoint: Log drone position and sensor data
-@app.route('/api/flights/<int:flight_id>/log_data', methods=['POST'])
-def log_flight_data(flight_id):
-    data = request.json
+def create_app(test_config=None):
+    """Create and configure the Flask application.
     
-    # Find the flight
-    flight = db.session.get(Flight, flight_id)
-    if not flight:
-        return jsonify({'error': 'Flight not found'}), 404
-    
-    # Create drone position
-    position = DronePosition(
-        flight_id=flight_id,
-        timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.now(UTC),
-        latitude=data['latitude'],
-        longitude=data['longitude'],
-        altitude=data['altitude']
-    )
-    
-    db.session.add(position)
-    db.session.flush()  # Get ID before commit
-    
-    # Create sensor reading
-    # Check for anomalies - simple threshold-based detection
-    is_anomaly = False
-    if data['temperature'] > 30 or data['temperature'] < 0 or data['humidity'] > 90 or data['air_quality_index'] > 150:
-        is_anomaly = True
+    Args:
+        test_config: Configuration dictionary for testing
         
-    reading = SensorReading(
-        drone_position_id=position.id,
-        timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.now(UTC),
-        temperature=data['temperature'],
-        humidity=data['humidity'],
-        air_quality_index=data['air_quality_index'],
-        is_anomaly=is_anomaly
-    )
+    Returns:
+        Flask application instance
+    """
+    # Create and configure the app
+    app = Flask(__name__)
     
-    db.session.add(reading)
-    db.session.commit()
+    # Load the default configuration
+    app.config.from_object(Config)
     
-    return jsonify({
-        'position_id': position.id,
-        'reading_id': reading.id,
-        'is_anomaly': is_anomaly
-    }), 201
-
-# API Endpoint: End a flight
-@app.route('/api/flights/<int:flight_id>/end', methods=['POST'])
-def end_flight(flight_id):
-    flight = db.session.get(Flight, flight_id)
-    if not flight:
-        return jsonify({'error': 'Flight not found'}), 404
+    # Override with test config if provided
+    if test_config:
+        app.config.update(test_config)
     
-    flight.end_time = datetime.now(UTC)
-    db.session.commit()
+    # Enable CORS
+    CORS(app)
     
-    return jsonify({'flight_id': flight.id, 'end_time': flight.end_time}), 200
-
-# API Endpoint: Get all flights
-@app.route('/api/flights', methods=['GET'])
-def get_all_flights():
-    flights = Flight.query.all()
-    flights_data = [
-        {
+    # Initialize the database
+    db.init_app(app)
+    
+    # Register routes
+    
+    @app.route('/')
+    def hello_world():
+        return {'message': 'Drone Monitoring API is running.'}
+    
+    # API Endpoint: Start a new flight
+    @app.route('/api/flights/start', methods=['POST'])
+    def start_flight():
+        new_flight = Flight(start_time=datetime.now(UTC))
+        db.session.add(new_flight)
+        db.session.commit()
+        return jsonify({'flight_id': new_flight.id, 'start_time': new_flight.start_time}), 201
+    
+    # API Endpoint: Log drone position and sensor data
+    @app.route('/api/flights/<int:flight_id>/log_data', methods=['POST'])
+    def log_flight_data(flight_id):
+        data = request.json
+        
+        # Find the flight
+        flight = db.session.get(Flight, flight_id)
+        if not flight:
+            return jsonify({'error': 'Flight not found'}), 404
+        
+        # Create drone position
+        position = DronePosition(
+            flight_id=flight_id,
+            timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.now(UTC),
+            latitude=data['latitude'],
+            longitude=data['longitude'],
+            altitude=data['altitude']
+        )
+        
+        db.session.add(position)
+        db.session.flush()  # Get ID before commit
+        
+        # Create sensor reading
+        # Check for anomalies - simple threshold-based detection
+        is_anomaly = False
+        if data['temperature'] > 30 or data['temperature'] < 0 or data['humidity'] > 90 or data['air_quality_index'] > 150:
+            is_anomaly = True
+            
+        reading = SensorReading(
+            drone_position_id=position.id,
+            timestamp=datetime.fromisoformat(data['timestamp']) if 'timestamp' in data else datetime.now(UTC),
+            temperature=data['temperature'],
+            humidity=data['humidity'],
+            air_quality_index=data['air_quality_index'],
+            is_anomaly=is_anomaly
+        )
+        
+        db.session.add(reading)
+        db.session.commit()
+        
+        return jsonify({
+            'position_id': position.id,
+            'reading_id': reading.id,
+            'is_anomaly': is_anomaly
+        }), 201
+    
+    # API Endpoint: End a flight
+    @app.route('/api/flights/<int:flight_id>/end', methods=['POST'])
+    def end_flight(flight_id):
+        flight = db.session.get(Flight, flight_id)
+        if not flight:
+            return jsonify({'error': 'Flight not found'}), 404
+        
+        flight.end_time = datetime.now(UTC)
+        db.session.commit()
+        
+        return jsonify({'flight_id': flight.id, 'end_time': flight.end_time}), 200
+    
+    # API Endpoint: Get all flights
+    @app.route('/api/flights', methods=['GET'])
+    def get_all_flights():
+        flights = Flight.query.all()
+        flights_data = [
+            {
+                'id': flight.id,
+                'start_time': flight.start_time,
+                'end_time': flight.end_time
+            } for flight in flights
+        ]
+        
+        return jsonify(flights_data), 200
+    
+    # API Endpoint: Get flight data
+    @app.route('/api/flights/<int:flight_id>/data', methods=['GET'])
+    def get_flight_data(flight_id):
+        flight = db.session.get(Flight, flight_id)
+        if not flight:
+            return jsonify({'error': 'Flight not found'}), 404
+        
+        positions = DronePosition.query.filter_by(flight_id=flight_id).all()
+        positions_data = []
+        
+        for position in positions:
+            readings = SensorReading.query.filter_by(drone_position_id=position.id).all()
+            
+            readings_data = [
+                {
+                    'id': reading.id,
+                    'timestamp': reading.timestamp,
+                    'temperature': reading.temperature,
+                    'humidity': reading.humidity,
+                    'air_quality_index': reading.air_quality_index,
+                    'is_anomaly': reading.is_anomaly
+                } for reading in readings
+            ]
+            
+            positions_data.append({
+                'id': position.id,
+                'timestamp': position.timestamp,
+                'latitude': position.latitude,
+                'longitude': position.longitude,
+                'altitude': position.altitude,
+                'sensor_readings': readings_data
+            })
+        
+        flight_data = {
             'id': flight.id,
             'start_time': flight.start_time,
-            'end_time': flight.end_time
-        } for flight in flights
-    ]
-    
-    return jsonify(flights_data), 200
-
-# API Endpoint: Get flight data
-@app.route('/api/flights/<int:flight_id>/data', methods=['GET'])
-def get_flight_data(flight_id):
-    flight = db.session.get(Flight, flight_id)
-    if not flight:
-        return jsonify({'error': 'Flight not found'}), 404
-    
-    positions = DronePosition.query.filter_by(flight_id=flight_id).all()
-    positions_data = []
-    
-    for position in positions:
-        readings = SensorReading.query.filter_by(drone_position_id=position.id).all()
+            'end_time': flight.end_time,
+            'positions': positions_data
+        }
         
-        readings_data = [
-            {
+        return jsonify(flight_data), 200
+    
+    # API Endpoint: Get latest sensor readings
+    @app.route('/api/sensor_readings/latest', methods=['GET'])
+    def get_latest_sensor_readings():
+        limit = request.args.get('limit', 10, type=int)
+        
+        readings = SensorReading.query.join(DronePosition).order_by(SensorReading.timestamp.desc()).limit(limit).all()
+        readings_data = []
+        
+        for reading in readings:
+            position = reading.position
+            readings_data.append({
                 'id': reading.id,
                 'timestamp': reading.timestamp,
+                'position': {
+                    'latitude': position.latitude,
+                    'longitude': position.longitude,
+                    'altitude': position.altitude
+                },
                 'temperature': reading.temperature,
                 'humidity': reading.humidity,
                 'air_quality_index': reading.air_quality_index,
                 'is_anomaly': reading.is_anomaly
-            } for reading in readings
-        ]
+            })
         
-        positions_data.append({
-            'id': position.id,
-            'timestamp': position.timestamp,
-            'latitude': position.latitude,
-            'longitude': position.longitude,
-            'altitude': position.altitude,
-            'sensor_readings': readings_data
-        })
+        return jsonify(readings_data), 200
     
-    flight_data = {
-        'id': flight.id,
-        'start_time': flight.start_time,
-        'end_time': flight.end_time,
-        'positions': positions_data
-    }
+    @app.route('/api/simulation/start', methods=['POST'])
+    def start_simulation():
+        """Start a new drone simulation with custom configuration"""
+        try:
+            # Get configuration from request
+            data = request.json
+            config = data.get('config', {})
+            
+            # Save the configuration to a temporary file
+            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'temp_config.json')
+            with open(config_path, 'w') as f:
+                json.dump(config, f)
+            
+            # Start the simulation process in the background
+            simulation_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'simulation', 'drone_simulator.py')
+            subprocess.Popen(['python', simulation_script, config_path], 
+                             stdout=subprocess.DEVNULL, 
+                             stderr=subprocess.DEVNULL)
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Simulation started successfully'
+            }), 200
+        except Exception as e:
+            app.logger.error(f"Error starting simulation: {str(e)}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Failed to start simulation: {str(e)}'
+            }), 500
     
-    return jsonify(flight_data), 200
+    return app
 
-# API Endpoint: Get latest sensor readings
-@app.route('/api/sensor_readings/latest', methods=['GET'])
-def get_latest_sensor_readings():
-    limit = request.args.get('limit', 10, type=int)
-    
-    readings = SensorReading.query.join(DronePosition).order_by(SensorReading.timestamp.desc()).limit(limit).all()
-    readings_data = []
-    
-    for reading in readings:
-        position = reading.position
-        readings_data.append({
-            'id': reading.id,
-            'timestamp': reading.timestamp,
-            'position': {
-                'latitude': position.latitude,
-                'longitude': position.longitude,
-                'altitude': position.altitude
-            },
-            'temperature': reading.temperature,
-            'humidity': reading.humidity,
-            'air_quality_index': reading.air_quality_index,
-            'is_anomaly': reading.is_anomaly
-        })
-    
-    return jsonify(readings_data), 200
+# Create the app instance for regular use (not testing)
+app = create_app()
 
-@app.route('/api/simulation/start', methods=['POST'])
-def start_simulation():
-    """Start a new drone simulation with custom configuration"""
-    try:
-        # Get configuration from request
-        data = request.json
-        config = data.get('config', {})
-        
-        # Save the configuration to a temporary file
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'temp_config.json')
-        with open(config_path, 'w') as f:
-            json.dump(config, f)
-        
-        # Start the simulation process in the background
-        simulation_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'simulation', 'drone_simulator.py')
-        subprocess.Popen(['python', simulation_script, config_path], 
-                         stdout=subprocess.DEVNULL, 
-                         stderr=subprocess.DEVNULL)
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'Simulation started successfully'
-        }), 200
-    except Exception as e:
-        app.logger.error(f"Error starting simulation: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Failed to start simulation: {str(e)}'
-        }), 500
+# Initialize database for regular use
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True) 

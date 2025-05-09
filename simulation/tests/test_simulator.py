@@ -17,15 +17,15 @@ class MockResponse:
         return self.json_data
 
 def test_drone_simulator_init():
-    """Test the initialization of the DroneSimulator class"""
+    """Test the initialisation of the DroneSimulator class"""
     simulator = DroneSimulator()
     
-    # Check default values
+    # Verify default values
     assert simulator.api_url == "http://localhost:5000"
     assert simulator.flight_id is None
     assert len(simulator.waypoints) > 0
     
-    # Check default config values
+    # Verify default config values
     assert simulator.config["simulation_speed"] == 1.0
     assert simulator.config["waypoint_file"] is None
     assert "temperature" in simulator.config["sensor_noise_levels"]
@@ -38,26 +38,26 @@ def test_drone_simulator_init():
     assert custom_simulator.api_url == "http://example.com/api"
 
 def test_simulator_with_config():
-    """Test initializing simulator with custom configuration"""
+    """Test initialising simulator with custom configuration"""
     custom_config = {
         "simulation_speed": 2.0,
         "sensor_noise_levels": {
             "temperature": 2.5,
             "humidity": 10.0,
-            "air_quality": 75.0,  # Include air_quality explicitly
-            "altitude": 20.0       # Include altitude explicitly
+            "air_quality": 75.0,
+            "altitude": 20.0
         }
     }
     
     simulator = DroneSimulator(config=custom_config)
     
-    # Check config was updated correctly
+    # Verify config was updated correctly
     assert simulator.config["simulation_speed"] == 2.0
     assert simulator.config["waypoint_file"] is None  # Default unchanged
     assert simulator.config["sensor_noise_levels"]["temperature"] == 2.5  # Updated
     assert simulator.config["sensor_noise_levels"]["humidity"] == 10.0  # Updated
     assert simulator.config["sensor_noise_levels"]["air_quality"] == 75.0  # Updated
-    assert simulator.config["sensor_noise_levels"]["altitude"] == 20.0  # Same as default
+    assert simulator.config["sensor_noise_levels"]["altitude"] == 20.0  # Updated
 
 def test_load_waypoints_from_file():
     """Test loading waypoints from a file"""
@@ -73,13 +73,13 @@ def test_load_waypoints_from_file():
         temp_path = temp_file.name
     
     try:
-        # Initialize simulator with config pointing to waypoint file
+        # Initialise simulator with config pointing to waypoint file
         config = {"waypoint_file": temp_path}
         simulator = DroneSimulator(config=config)
         
-        # Check waypoints were loaded correctly
+        # Verify waypoints were loaded correctly
         assert len(simulator.waypoints) == len(test_waypoints)
-        # Instead of comparing lists to tuples directly, compare each coordinate
+        # Compare each coordinate
         for i in range(len(test_waypoints)):
             assert simulator.waypoints[i][0] == test_waypoints[i][0]
             assert simulator.waypoints[i][1] == test_waypoints[i][1]
@@ -89,13 +89,13 @@ def test_load_waypoints_from_file():
             os.unlink(temp_path)
 
 def test_load_waypoints_file_not_found():
-    """Test behavior when waypoint file doesn't exist"""
+    """Test behaviour when waypoint file doesn't exist"""
     config = {"waypoint_file": "non_existent_file.json"}
     simulator = DroneSimulator(config=config)
     
     # Should use default waypoints if file not found
     assert len(simulator.waypoints) > 0
-    # Check first waypoint matches default
+    # Verify first waypoint matches default
     assert simulator.waypoints[0] == (51.507351, -0.127758)
 
 def test_generate_sensor_reading():
@@ -105,7 +105,7 @@ def test_generate_sensor_reading():
     
     reading = simulator.generate_sensor_reading(position)
     
-    # Check reading contains all expected fields
+    # Verify reading contains all expected fields
     assert 'timestamp' in reading
     assert 'latitude' in reading
     assert 'longitude' in reading
@@ -114,7 +114,7 @@ def test_generate_sensor_reading():
     assert 'humidity' in reading
     assert 'air_quality_index' in reading
     
-    # Check values are within expected ranges
+    # Verify values are within expected ranges
     assert reading['latitude'] == position[0]
     assert reading['longitude'] == position[1]
     assert isinstance(reading['altitude'], float)
@@ -160,14 +160,17 @@ def test_sensor_noise_levels():
     humidity_range_high = max(r['humidity'] for r in readings_high) - min(r['humidity'] for r in readings_high)
     
     # High noise config should generally produce wider range of values
-    # Note: This is statistical, so in rare cases it might not hold true
-    # so we check it's at least within reasonable bounds
+    # This is statistical, so we check it's at least within reasonable bounds
     assert temp_range_high >= temp_range_low * 0.5
     assert humidity_range_high >= humidity_range_low * 0.5
 
 @mock.patch('time.sleep')
-def test_simulation_speed(mock_sleep):
+@mock.patch('simulation.drone_physics.DronePhysics.update_physics')
+def test_simulation_speed(mock_update_physics, mock_sleep):
     """Test that simulation speed affects the time between waypoints"""
+    # Mock the physics engine to immediately return the target position
+    mock_update_physics.side_effect = lambda target_pos: target_pos
+    
     # Create a simulator with fast speed
     fast_config = {"simulation_speed": 2.0}
     fast_simulator = DroneSimulator(config=fast_config)
@@ -185,11 +188,12 @@ def test_simulation_speed(mock_sleep):
         fast_simulator.waypoints = [(0, 0), (1, 1)]  # Just 2 waypoints
         fast_simulator.simulate_path()
         
-        # Check sleep time (should be 1.0 / 2.0 = 0.5 seconds)
+        # Verify sleep time (should be 1.0 / 2.0 = 0.5 seconds)
         mock_sleep.assert_called_with(0.5)
     
-    # Reset mock
+    # Reset mocks
     mock_sleep.reset_mock()
+    mock_update_physics.reset_mock()
     
     # Mock API calls for slow simulator
     with mock.patch.object(slow_simulator, 'start_flight', return_value=1), \
@@ -200,7 +204,7 @@ def test_simulation_speed(mock_sleep):
         slow_simulator.waypoints = [(0, 0), (1, 1)]  # Just 2 waypoints
         slow_simulator.simulate_path()
         
-        # Check sleep time (should be 1.0 / 0.5 = 2.0 seconds)
+        # Verify sleep time (should be 1.0 / 0.5 = 2.0 seconds)
         mock_sleep.assert_called_with(2.0)
 
 @mock.patch('requests.post')
@@ -317,8 +321,12 @@ def test_send_data_to_api_no_flight_id(mock_post):
 @mock.patch.object(DroneSimulator, 'start_flight')
 @mock.patch.object(DroneSimulator, 'send_data_to_api')
 @mock.patch.object(DroneSimulator, 'end_flight')
-def test_simulate_path(mock_end_flight, mock_send_data, mock_start_flight):
+@mock.patch('simulation.drone_physics.DronePhysics.update_physics')
+def test_simulate_path(mock_update_physics, mock_end_flight, mock_send_data, mock_start_flight):
     """Test the main simulate_path method with mocked API calls"""
+    # Mock the physics engine to immediately return the target position
+    mock_update_physics.side_effect = lambda target_pos: target_pos
+    
     # Configure mocks
     mock_start_flight.return_value = 1
     mock_send_data.return_value = True
