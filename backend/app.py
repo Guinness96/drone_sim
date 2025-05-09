@@ -6,16 +6,10 @@ from flask_cors import CORS
 import subprocess
 import json
 
-# Adjust import paths based on how the file is being run
-if __name__ == "__main__":
-    # When running as a script directly (python app.py)
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from models import db, Flight, DronePosition, SensorReading
-    from config import Config
-else:
-    # When imported as a module (e.g., in tests)
-    from backend.models import db, Flight, DronePosition, SensorReading
-    from backend.config import Config
+# Always use absolute imports based on the package structure
+# This ensures imports work correctly regardless of how the app is run
+from backend.models import db, Flight, DronePosition, SensorReading
+from backend.config import Config
 
 app = Flask(__name__)
 app.config.from_object(Config)

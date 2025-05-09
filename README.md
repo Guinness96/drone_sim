@@ -2,6 +2,62 @@
 
 A software-based proof-of-concept (PoC) system that simulates an autonomous drone collecting environmental data, transmits this data to a backend server, stores it, and visualizes it on a secure web-based dashboard.
 
+## Quick Start
+
+The easiest way to run the project is using the provided run script:
+
+1. Clone the repository and navigate to the project root (drone_sim)
+
+2. Create and activate a virtual environment:
+   ```
+   python -m venv .venv
+   .venv\Scripts\activate  # Windows
+   source .venv/bin/activate  # Linux/MacOS
+   ```
+
+3. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. Create a `.env` file in the project root with database configuration:
+   ```
+   DATABASE_URL=postgresql://drone_user:drone_password@localhost:5432/drone_monitoring_db
+   SECRET_KEY=your-secret-key-for-development
+   FLASK_ENV=development
+   ```
+
+5. Run the project (this will start PostgreSQL, backend, and frontend):
+   ```
+   python run.py
+   ```
+   
+   This will:
+   - Check if PostgreSQL is running and start it if needed
+   - Start the Flask backend server
+   - Start the React frontend development server
+   
+6. Once everything is running:
+   - Access the frontend at: http://localhost:3000
+   - The backend API is available at: http://localhost:5000
+
+7. Additional options:
+   ```
+   # Start only the backend (no frontend)
+   python run.py --no-frontend
+   
+   # Start only the frontend (no backend)
+   python run.py --no-backend
+   
+   # Start everything and run a simulation
+   python run.py --simulation
+   
+   # Start with a custom simulation configuration
+   python run.py --simulation --simulation-config path/to/config.json
+   ```
+
+8. Press Ctrl+C to stop all components when finished
+
 ## Project Overview
 
 This project implements:
