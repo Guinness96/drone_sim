@@ -64,7 +64,7 @@ drone_sim/
 
 ### Environment Setup
 
-1. Create a `.env` file in the project root:
+1. Create a `.env` file in the project root directory (drone_sim):
    ```
    DATABASE_URL=postgresql://drone_user:drone_password@localhost:5432/drone_monitoring_db
    SECRET_KEY=your-secret-key-for-development
@@ -88,7 +88,7 @@ drone_sim/
 
 ### Backend Setup
 
-1. Create and activate a virtual environment:
+1. Create and activate a virtual environment in the project root (drone_sim):
    ```
    # Create virtual environment
    python -m venv .venv
@@ -100,14 +100,14 @@ drone_sim/
    source .venv/bin/activate
    ```
 
-2. Install dependencies:
+2. Install dependencies (from the project root):
    ```
    pip install -r requirements.txt
    ```
 
-3. Start the Flask backend server:
+3. Start the Flask backend server (from the project root):
    ```
-   # Make sure you are in the project root directory
+   # Make sure you are in the project root directory (drone_sim)
    python -m backend.app
    ```
    The server should be available at http://localhost:5000
@@ -116,7 +116,7 @@ drone_sim/
 
 1. Open a new terminal window
 
-2. Navigate to the frontend directory:
+2. Navigate to the frontend directory from the project root:
    ```
    cd frontend
    ```
@@ -136,9 +136,9 @@ drone_sim/
 
 1. Make sure the backend server is running
 
-2. Run the simulation from the project root directory (in a separate terminal with the virtual environment activated):
+2. Run the simulation from the project root directory (drone_sim) in a separate terminal with the virtual environment activated:
    ```
-   # Use the correct module path to fix import issues
+   # Make sure you are in the project root directory (drone_sim)
    python -m simulation.drone_simulator
    ```
 
@@ -146,6 +146,7 @@ drone_sim/
 
 ### Troubleshooting
 
+- **Directory Issues**: All commands should be run from the project root directory (drone_sim) unless specified otherwise
 - **Database Connection Issues**: Ensure PostgreSQL is running and that your database connection details in the `.env` file match your PostgreSQL setup
 - **Import Errors**: Make sure you're running commands from the project root directory and using module notation (e.g., `python -m backend.app` instead of just `python backend/app.py`)
 - **Port Conflicts**: If port 5000 or 3000 is already in use, you'll need to change the port in the respective configuration
