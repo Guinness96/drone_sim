@@ -43,10 +43,13 @@ const FlightList = ({ selectedFlightId, onSelectFlight }) => {
       for (const flight of flights) {
         try {
           const flightData = await getFlightData(flight.id);
-          // Check if any sensor reading has an anomaly
-          const hasAnomaly = flightData.positions.some(
-            position => position.sensor_reading && position.sensor_reading.is_anomaly
+          
+          // Check if any position has any sensor readings with anomalies
+          const hasAnomaly = flightData.positions.some(position => 
+            position.sensor_readings && 
+            position.sensor_readings.some(reading => reading.is_anomaly)
           );
+          
           anomalyStatus[flight.id] = hasAnomaly;
         } catch (err) {
           console.error(`Error checking anomalies for flight ${flight.id}:`, err);

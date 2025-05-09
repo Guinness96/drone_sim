@@ -95,17 +95,26 @@ drone_sim/
 │   └── src/               # React source code
 │       ├── components/    # React components 
 │       └── services/      # API services 
+├── project_runner/        # Project runner module
+│   ├── cli.py             # Command-line interface
+│   ├── postgres.py        # PostgreSQL management
+│   ├── process.py         # Process management
+│   └── servers.py         # Server management
 ├── simulation/            # Python-based drone simulation
 │   ├── drone_simulator.py # Drone flight and sensor data simulator
 │   ├── drone_physics.py   # Physics engine for realistic drone movement
 │   └── tests/             # Simulation tests
 ├── tests/                 # Integration tests
+│   └── project_runner/    # Tests for project runner module 
 ├── instance/              # Instance-specific configuration
 ├── .env                   # Environment variables (create this - not in repo)
+├── config.ini             # Configuration for project runner
+├── run.py                 # Main entry point for running the project
 ├── setup_postgres.sql     # Database setup script
 ├── .gitignore             # Git ignore file
 ├── README.md              # This file
 ├── todo.md                # Project to-do list
+├── TEST_SUMMARY.md        # Summary of test coverage
 ├── prd.md                 # Product Requirements Document
 └── requirements.txt       # Python dependencies
 ```
@@ -238,28 +247,28 @@ This repository uses a monorepo approach where both frontend and backend code ar
 
 ## Current Development Status
 
-Based on the project to-do list and requirements:
+The project is currently in active development with the following milestones achieved:
 
-### Completed:
-- ✅ Project setup and structure
-- ✅ Python drone simulator with waypoint and sensor data generation
-- ✅ Realistic physics engine for drone movement simulation
-- ✅ Flask backend API with PostgreSQL database integration
-- ✅ API endpoints for data ingestion and retrieval
-- ✅ Backend, simulation, and physics testing
-- ✅ Frontend API service integration
-- ✅ Frontend simulator control component for adjusting simulation parameters
+- ✅ Working drone simulation with physics engine
+- ✅ Database integration with PostgreSQL
+- ✅ REST API for data ingestion and retrieval
+- ✅ Basic frontend dashboard with flight list and sensor data views
+- ✅ Integrated simulation controls in the frontend
+- ✅ Basic anomaly detection in the backend
+- ✅ Project runner script for easy startup
+- ✅ All tests passing, including frontend data display
 
-### In Progress:
-- 🔄 Frontend dashboard components (FlightList, SensorDataTable)
+Recent improvements:
+- ✅ Fixed frontend data display issues with flight and sensor data loading
+- ✅ Resolved data structure mismatch between API responses and frontend components
+- ✅ Proper error handling in frontend components
+- ✅ All integration tests now pass successfully
 
-### Planned:
-- 📝 Data visualization with Chart.js
-- 📝 Map visualization with Leaflet.js
-- 📝 Authentication with Auth0
-- 📝 Basic anomaly detection
-- 📝 Enhanced simulation features (battery life, weather conditions, etc.)
-- 📝 Comprehensive testing and documentation
+In progress:
+- 🔄 Enhanced data visualization with charts
+- 🔄 Map integration for flight path visualization
+- 🔄 Authentication system
+- 🔄 Advanced analytics features
 
 ## License
 

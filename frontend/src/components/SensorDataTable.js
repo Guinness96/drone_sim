@@ -21,14 +21,23 @@ const SensorDataTable = ({ selectedFlightId }) => {
           // Fetch data for specific flight
           const flightData = await getFlightData(selectedFlightId);
           // Extract the sensor readings with position data
-          data = flightData.positions.map(position => ({
-            ...position.sensor_reading,
-            latitude: position.latitude,
-            longitude: position.longitude,
-            altitude: position.altitude,
-            timestamp: position.timestamp,
-            is_anomaly: position.sensor_reading.is_anomaly
-          }));
+          data = [];
+          
+          // Map the data - each position has an array of sensor_readings
+          flightData.positions.forEach(position => {
+            if (position.sensor_readings && position.sensor_readings.length > 0) {
+              // Map each sensor reading with position data
+              position.sensor_readings.forEach(reading => {
+                data.push({
+                  ...reading,
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                  altitude: position.altitude,
+                  timestamp: reading.timestamp || position.timestamp,
+                });
+              });
+            }
+          });
         } else {
           // Fetch latest readings
           const readings = await getLatestSensorReadings(20);

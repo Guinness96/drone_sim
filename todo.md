@@ -192,7 +192,7 @@
 - [x] Create `backend/tests/test_models.py` to test database models
 - [x] Create `backend/tests/test_api.py` to test API endpoints
 - [x] Run tests (6/7 tests pass, with Windows-specific file cleanup issue)
-- [ ] Investigate Windows-specific file cleanup issue
+- [x] Investigate Windows-specific file cleanup issue
 - [ ] Add test coverage measurement with pytest-cov
 
 ### Simulation Testing
@@ -312,22 +312,22 @@
 - [ ] Decide whether to store anomaly flags in the database or calculate on retrieval
 
 ### Dashboard Anomaly Display (Frontend)
-- [ ] In `SensorDataTable.js` and `FlightMap.js` (Markers):
-    - [ ] Conditionally style rows/markers if `is_anomaly` is true (e.g., red color, different icon).
+- [x] In `SensorDataTable.js` and `FlightMap.js` (Markers):
+    - [x] Conditionally style rows/markers if `is_anomaly` is true (e.g., red color, different icon).
 - [ ] Create separate "Anomalies List" component showing all detected anomalies for selected flight
 
 ### Code & UI Refinement
-- [ ] Review all code for clarity, add comments.
-- [ ] Basic error handling in React components for API call failures.
-- [ ] Ensure consistent UI styling.
+- [x] Review all code for clarity, add comments.
+- [x] Basic error handling in React components for API call failures.
+- [x] Ensure consistent UI styling.
 - [ ] Test responsive design (basic).
 
 ## Phase 7: Testing, Documentation & Demo Prep
 
 ### Testing
 - [x] Manually test data flow: Simulation -> API -> Database -> Frontend.
-- [ ] Test all API endpoints with Postman/Insomnia (including auth).
-- [ ] Test all frontend user interactions and visualizations.
+- [x] Test all API endpoints with Postman/Insomnia (including auth).
+- [x] Test all frontend user interactions and visualizations.
 - [ ] Test login/logout functionality.
 - [ ] Add end-to-end (E2E) tests using Cypress or Playwright
 - [ ] Conduct basic performance testing with large datasets (10,000+ data points)
