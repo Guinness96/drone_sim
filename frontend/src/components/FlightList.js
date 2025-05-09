@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllFlights } from '../services/api';
+import { getAllFlights, getFlightData } from '../services/api';
 
 /**
  * Component to display a list of drone flights
@@ -9,9 +9,11 @@ import { getAllFlights } from '../services/api';
  */
 const FlightList = ({ selectedFlightId, onSelectFlight }) => {
   const [flights, setFlights] = useState([]);
+  const [flightsWithAnomalies, setFlightsWithAnomalies] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fetch all flights
   useEffect(() => {
     const fetchFlights = async () => {
       try {
@@ -30,6 +32,35 @@ const FlightList = ({ selectedFlightId, onSelectFlight }) => {
     fetchFlights();
   }, []);
 
+  // Fetch anomaly information for each flight
+  useEffect(() => {
+    if (flights.length === 0) return;
+
+    const checkForAnomalies = async () => {
+      const anomalyStatus = {};
+      
+      // Check each flight for anomalies
+      for (const flight of flights) {
+        try {
+          const flightData = await getFlightData(flight.id);
+          // Check if any sensor reading has an anomaly
+          const hasAnomaly = flightData.positions.some(
+            position => position.sensor_reading && position.sensor_reading.is_anomaly
+          );
+          anomalyStatus[flight.id] = hasAnomaly;
+        } catch (err) {
+          console.error(`Error checking anomalies for flight ${flight.id}:`, err);
+          // Default to no anomaly if there's an error
+          anomalyStatus[flight.id] = false;
+        }
+      }
+      
+      setFlightsWithAnomalies(anomalyStatus);
+    };
+
+    checkForAnomalies();
+  }, [flights]);
+
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -47,12 +78,17 @@ const FlightList = ({ selectedFlightId, onSelectFlight }) => {
         {flights.map((flight) => (
           <div
             key={flight.id}
-            className={`flight-item ${selectedFlightId === flight.id ? 'selected' : ''}`}
+            className={`flight-item ${selectedFlightId === flight.id ? 'selected' : ''} ${flightsWithAnomalies[flight.id] ? 'has-anomaly' : ''}`}
             onClick={() => onSelectFlight(flight.id)}
             data-testid={`flight-item-${flight.id}`}
           >
             <div className="flight-info">
-              <span className="flight-id" data-testid={`flight-id-${flight.id}`}>Flight #{flight.id}</span>
+              <span className="flight-id" data-testid={`flight-id-${flight.id}`}>
+                Flight #{flight.id}
+                {flightsWithAnomalies[flight.id] && (
+                  <span className="anomaly-indicator" title="This flight contains anomalies">⚠️</span>
+                )}
+              </span>
               <span className="flight-time">
                 {formatDate(flight.start_time)}
                 {flight.end_time ? ` - ${formatDate(flight.end_time)}` : ' (Active)'}

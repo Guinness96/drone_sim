@@ -3,6 +3,8 @@ import sys
 from datetime import datetime, UTC
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import subprocess
+import json
 
 # Adjust import paths based on how the file is being run
 if __name__ == "__main__":
@@ -175,6 +177,36 @@ def get_latest_sensor_readings():
         })
     
     return jsonify(readings_data), 200
+
+@app.route('/api/simulation/start', methods=['POST'])
+def start_simulation():
+    """Start a new drone simulation with custom configuration"""
+    try:
+        # Get configuration from request
+        data = request.json
+        config = data.get('config', {})
+        
+        # Save the configuration to a temporary file
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'temp_config.json')
+        with open(config_path, 'w') as f:
+            json.dump(config, f)
+        
+        # Start the simulation process in the background
+        simulation_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'simulation', 'drone_simulator.py')
+        subprocess.Popen(['python', simulation_script, config_path], 
+                         stdout=subprocess.DEVNULL, 
+                         stderr=subprocess.DEVNULL)
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Simulation started successfully'
+        }), 200
+    except Exception as e:
+        app.logger.error(f"Error starting simulation: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to start simulation: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True) 
