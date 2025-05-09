@@ -24,5 +24,4 @@ alwaysApply: true
 - Avoid making major changes to the patterns and architecture of how a feature works, after it has shown to work well, unless explicitly instructed
 - Always think about what other methods and areas of code might be affected by code changes
 - Use UK English for all code and documentation
-
 - Use Powershell commands when running commands in Terminal

@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Always validate mock data in tests against actual API response structures
+Consider adding integration tests with real API endpoints for critical data flows
+Document expected API response formats in comments or separate interface files
+Test components with edge cases and various data structures, not just the happy path
+
+When an issue is found in production that wasn't caught by tests, add a specific test for that scenario
